@@ -59,34 +59,8 @@ def is_unlocked():
         return False
 
 
-def _pre_notifiy():
-    # Detectar o DISPLAY e DBUS_SESSION_BUS_ADDRESS da sessão do utilizador
-    if "DISPLAY" not in os.environ or "DBUS_SESSION_BUS_ADDRESS" not in os.environ:
-        # Pega o PID do processo do GNOME do usuário
-        try:
-            user = subprocess.check_output("whoami", shell=True).decode().strip()
-            # Procura um processo da sessão gráfica (ex: gnome-shell)
-            pid = (
-                subprocess.check_output(f"pgrep -u {user} gnome-shell", shell=True)
-                .decode()
-                .strip()
-                .split("\n")[0]
-            )
-            env_file = f"/proc/{pid}/environ"
-            with open(env_file, "rb") as f:
-                env = f.read().decode().split("\0")
-                for e in env:
-                    if e.startswith("DISPLAY="):
-                        os.environ["DISPLAY"] = e.split("=", 1)[1]
-                    elif e.startswith("DBUS_SESSION_BUS_ADDRESS="):
-                        os.environ["DBUS_SESSION_BUS_ADDRESS"] = e.split("=", 1)[1]
-        except Exception as ex:
-            logging.error("⚠️ Não foi possível detectar DISPLAY/DBUS:", ex)
-
-
 def notify(msg):
     logging.info(f"Notifying: {msg}")
-    _pre_notifiy()
     subprocess.Popen(["notify-send", "⏱ Tempo Online", msg])
 
 
