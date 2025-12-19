@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 
 # -------- PARÂMETROS --------
-if len(sys.argv) != 4:
+if len(sys.argv) != 5:
     sys.exit(
         "Uso: breaks_tracker.py <notificar_a_cada_x_min> <long_break> <intervalo_minutos>"
     )
@@ -106,6 +106,9 @@ if last_date != today:
 if is_unlocked():
     minutes += INTERVAL_MIN
     sequence_minutes += INTERVAL_MIN
+    if idle > 0:
+        logging.info(f"System is locked/idle. Idle time: {idle} minute(s).")
+    idle = 0
     if minutes % (NOTIFY_EVERY * LONG_BREAK) == 0:
         message = random.choice(LONG_BREAK_MESSAGES)
         notify(message, "Long Break", "critical")
@@ -114,10 +117,8 @@ if is_unlocked():
         notify(message, "Short Break")
     else:
         time_to_notify = NOTIFY_EVERY - (minutes % NOTIFY_EVERY)
-        logging.info(f"Next notification in {time_to_notify} minute(s).")
 else:
     idle += INTERVAL_MIN
-    logging.info(f"System is locked/idle. Idle time: {idle} minute(s).")
     if sequence_minutes != 0 and idle >= LONG_BREAK_TIME:
         sequence_minutes = 0
         logging.info("Idle time exceeded long break time. Resetting minutes counter.")
