@@ -6,7 +6,7 @@ After=graphical-session.target
 Type=simple
 # Ajuste os parâmetros conforme necessário:
 # notify_every short_every long_every interval_min long_time
-ExecStart=/home/santosm/personal/reminder/.venv/bin/python3 /home/santosm/personal/reminder/breaks_tracker.py 30 2 3 1 15
+ExecStart=/home/santosm/personal/reminder/.venv/bin/python3 /home/santosm/personal/reminder/breaks_tracker.py 1 2 8 15 30
 Restart=on-failure
 RestartSec=10
 
