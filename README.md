@@ -23,7 +23,6 @@ Sistema inteligente de rastreamento de tempo online com notificações automáti
 ├── breaks_tracker.py           # Script principal (daemon)
 ├── install_autostart.sh        # Instalador para autostart
 ├── breaks_tracker.service      # Systemd service file
-├── setup_breaks_tracker.sh     # Setup alternativo (timer)
 └── README.md
 ```
 
