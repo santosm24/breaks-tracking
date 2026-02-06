@@ -1,118 +1,179 @@
-# Online Tracker
+# Breaks Tracker 🕐💧
 
-Um script para rastrear o tempo que passas online no Ubuntu, com notificações de pausas curtas e longas.  
+Sistema inteligente de rastreamento de tempo online com notificações automáticas para pausas, hidratação e saúde ocular.
 
-Funciona com **Python 3** e **systemd user timer**.  
+**Compatibilidade:** Linux (GNOME/sistemas com DBus)  
+**Tecnologias:** Python 3, asyncio, jeepney, systemd
 
+## ✨ Funcionalidades
 
+- ⏱️ Rastreamento contínuo do tempo online
+- 💧 Lembretes periódicos de hidratação
+- 👀 Pausas curtas para descanso dos olhos
+- 🚶 Pausas longas para movimento
+- 🔒 Detecção automática de bloqueio de ecrã (via DBus)
+- 📊 Logging de atividade em `~/.local/share/breaks_tracker/online_time.log`
+- 🔄 Reset automático após pausas longas
+- 🎯 Notificações inteligentes via `notify-send`
 
 ## 📂 Estrutura
 
 ```
 /pasta-do-script/
-├── breaks_tracker.py
-├── setup_breaks_tracker.sh
+├── breaks_tracker.py           # Script principal (daemon)
+├── install_autostart.sh        # Instalador para autostart
+├── breaks_tracker.service      # Systemd service file
+├── setup_breaks_tracker.sh     # Setup alternativo (timer)
 └── README.md
 ```
 
-- `breaks_tracker.py` → script Python que conta tempo online e envia notificações  
-- `setup_breaks_tracker.sh` → script para configurar o timer no systemd  
-- `README.md` → este arquivo  
+- `breaks_tracker.py` → daemon Python que monitora tempo e envia notificações  
+- `install_autostart.sh` → script para configurar autostart com systemd  
+- `breaks_tracker.service` → service file do systemd
 
 ---
 
-## ⚙️ Instalação / Setup
-
-Na pasta onde está o Python e o setup:
+## 📦 Dependências
 
 ```bash
-chmod +x setup_breaks_tracker.sh
-./setup_breaks_tracker.sh <TOTAL_TIME> <NOTIFY_EVERY> <INTERVAL_MIN>
-````
-
-Parâmetros:
-
-| Parâmetro    | Descrição                                       | Exemplo |
-| ------------ | ----------------------------------------------- | ------- |
-| TOTAL_TIME   | Total de minutos online que desejas registrar   | 480     |
-| NOTIFY_EVERY | Intervalo em minutos para enviar notificações   | 30      |
-| INTERVAL_MIN | Intervalo em minutos para rodar o script Python | 1       |
-
-Exemplo de execução:
-
-```bash
-./setup_breaks_tracker.sh 480 30 5
-```
-
-> Isso irá rodar o script a cada 5 minutos, notificando a cada 30 minutos, contando até 480 minutos por dia.
-
----
-
-## 🔍 Como confirmar que o serviço está a correr
-
-```bash
-systemctl --user status breaks-tracker.timer
-```
-
-Deve aparecer algo como:
-
-```
-Active: active (waiting) since ...
-```
-
-Também podes ver os logs:
-
-```bash
-journalctl --user -u breaks-tracker.service
-```
-
-Ou verificar o log do script:
-
-```bash
-cat online_time.log
+pip install -r requirements.txt
 ```
 
 ---
 
-## 🛑 Como parar o serviço
+## ⚙️ Instalação Rápida (Autostart)
 
-Para parar o timer temporariamente:
-
-```bash
-systemctl --user stop breaks-tracker.timer
-```
-
-Para desativar (não inicia automaticamente no login):
+**Método recomendado** - o script roda automaticamente ao iniciar o PC:
 
 ```bash
-systemctl --user disable breaks-tracker.timer
+chmod +x install_autostart.sh
+./install_autostart.sh
 ```
+
+Isso irá:
+1. Copiar o service para `~/.config/systemd/user/`
+2. Ativar o serviço para iniciar automaticamente
+3. Iniciar o serviço imediatamente
+
+### Parâmetros do Script
+
+O script aceita 5 parâmetros obrigatórios:
+
+```
+breaks_tracker.py <notify_every> <short_every> <long_every> <interval_min> <long_time>
+```
+
+| Parâmetro    | Descrição                                         | Exemplo |
+| ------------ | ------------------------------------------------- | ------- |
+| notify_every | Intervalo base para lembretes de hidratação (min) | 1       |
+| short_every  | Short break a cada X lembretes de hidratação      | 2       |
+| long_every   | Long break a cada X lembretes de hidratação       | 8       |
+| interval_min | Intervalo de verificação do timer (min)           | 15      |
+| long_time    | Tempo mínimo de ausência para reset do timer (min)| 30      |
+
+**Exemplo de configuração padrão no service:**
+
+```bash
+ExecStart=/usr/bin/python3 /path/to/breaks_tracker.py 1 2 8 15 30
+```
+
+Isso significa:
+- 💧 Hidratação a cada 15 min  (15 * 1)
+- 👀 Short break a cada 30 min (15 × 2)
+- 🚶 Long break a cada 120 min (15 × 8)
+- Verifica estado a cada 15 min
+- Ausências ≥30 min resetam o timer
 
 ---
 
-## 🔄 Como fazer update
+## � Personalização
 
-Se atualizares o script Python (`breaks_tracker.py`):
+### Alterar Parâmetros
 
-1. Recarrega o daemon do systemd:
+Edita o arquivo de serviço:
+
+```bash
+nano ~/.config/systemd/user/breaks_tracker.service
+```
+
+Altera a linha `ExecStart` com os parâmetros desejados, depois:
 
 ```bash
 systemctl --user daemon-reload
+systemctl --user restart breaks_tracker
 ```
 
-2. Reinicia o timer para aplicar alterações:
+### Alterar Mensagens
+
+Edita o `breaks_tracker.py` nas listas:
+
+```python
+SHORT_BREAK_MESSAGES = [
+    "👀 Descanso para os olhos: olha para longe durante 20 segundos.",
+    "🧍‍♂️ Micro-pausa: levanta-te, respira fundo e continua.",
+    # ... adiciona mais mensagens
+]
+
+LONG_BREAK_MESSAGES = [
+    "🛋️ Pausa longa: hora de parar a sério. Afasta-te do ecrã.",
+    # ... adiciona mais mensagens
+]
+```
+
+Depois reinicia o serviço:
 
 ```bash
-systemctl --user restart breaks-tracker.timer
+systemctl --user restart breaks_tracker
 ```
 
-> Se quiseres alterar parâmetros (TOTAL_TIME, NOTIFY_EVERY, INTERVAL_MIN), executa novamente:
+---
+
+## 🔍 Gestão do Serviço
+
+### Ver Status
 
 ```bash
-./setup_breaks_tracker.sh <TOTAL_TIME> <NOTIFY_EVERY> <INTERVAL_MIN>
+systemctl --user status breaks_tracker
 ```
 
-Isso irá atualizar o service com os novos valores.
+### Ver Logs em Tempo Real
+
+```bash
+journalctl --user -u breaks_tracker -f
+```
+
+### Ver Histórico de Atividade
+
+```bash
+cat ~/.local/share/breaks_tracker/online_time.log
+```
+
+### Parar Serviço
+
+```bash
+systemctl --user stop breaks_tracker
+```
+
+### Iniciar Serviço
+
+```bash
+systemctl --user start breaks_tracker
+```
+
+### Reiniciar Serviço
+
+```bash
+systemctl --user restart breaks_tracker
+```
+
+### Desinstalar (Desativar Autostart)
+
+```bash
+systemctl --user disable breaks_tracker
+systemctl --user stop breaks_tracker
+rm ~/.config/systemd/user/breaks_tracker.service
+systemctl --user daemon-reload
+```
 
 ---
 

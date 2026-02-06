@@ -1,0 +1,18 @@
+[Unit]
+Description=Breaks Tracker - Sistema de Pausas e Hidratação
+After=graphical-session.target
+
+[Service]
+Type=simple
+# Ajuste os parâmetros conforme necessário:
+# notify_every short_every long_every interval_min long_time
+ExecStart=/home/santosm/personal/reminder/.venv/bin/python3 /home/santosm/personal/reminder/breaks_tracker.py 30 2 3 1 15
+Restart=on-failure
+RestartSec=10
+
+# Garantir variáveis de ambiente para notificações
+Environment="DISPLAY=:0"
+Environment="DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/%U/bus"
+
+[Install]
+WantedBy=default.target
